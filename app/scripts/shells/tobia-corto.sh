@@ -163,28 +163,10 @@ greet() {
     echo "ctpq time $1 off 0 pos (-70.0 40.0 -7.0 100.0 60.0 -10.0 -10.0)" | yarp rpc /ctpservice/$2/rpc
 }
 
-sad() {
-    echo "set mou sad" | yarp rpc /icub/face/emotions/in
-    echo "set leb sad" | yarp rpc /icub/face/emotions/in
-    echo "set reb sad" | yarp rpc /icub/face/emotions/in
-}
-
 curious() {
     echo "set mou neu" | yarp rpc /icub/face/emotions/in
     echo "set leb shy" | yarp rpc /icub/face/emotions/in
     echo "set reb shy" | yarp rpc /icub/face/emotions/in
-}
-
-neutral() {
-    echo "set mou neu" | yarp rpc /icub/face/emotions/in
-    echo "set leb neu" | yarp rpc /icub/face/emotions/in
-    echo "set reb neu" | yarp rpc /icub/face/emotions/in
-}
-
-happy() {
-    echo "set mou hap" | yarp rpc /icub/face/emotions/in
-    echo "set leb hap" | yarp rpc /icub/face/emotions/in
-    echo "set reb hap" | yarp rpc /icub/face/emotions/in
 }
 
 caress() {
@@ -213,6 +195,64 @@ home_all() {
     neutral
     open_eyes
 }
+
+# MY Functions ####################################### START
+
+point_straight() {
+	echo "ctpq time $1 off 0 pos ($2 $3 3.5 20.0 $4 28.0 -6.0 57.0 55.0 30.0 33.0 4.0 9.0 58.0 113.0 192.0)" | yarp rpc /ctpservice/$5/rpc
+}
+
+arm_sleeve() {
+	echo "ctpq time $1 off 0 pos (-30 $2 3.5 40.0 30 28.0 -6.0 65 70 70 20 10 10 10 10 10)" | yarp rpc /ctpservice/$3/rpc
+}
+
+cover_eye() {
+	echo "ctpq time $1 off 0 pos (-67.19 19 25.74 101.36 -60 0 0 59 20 20 20 10 10 10 10 10)" | yarp rpc /ctpservice/$2/rpc
+}
+
+uncover_eye(){
+	echo "ctpq time $1 off 0 pos (-40 19 16 101.36 -60 0 0 59 20 20 20 10 10 10 10 10)" | yarp rpc /ctpservice/$2/rpc
+}
+
+peek_a_boo(){
+	gaze "idle"
+	cover_eye $1 left_arm
+	sleep 2.0
+	cover_eye $1 right_arm
+	sleep 2.0
+	close_eyes
+	sleep 2.0
+	let TUNCOVER=$1*2
+	echo $TUNCOVER
+	uncover_eye $TUNCOVER left_arm
+	uncover_eye $TUNCOVER right_arm
+	sleep $TUNCOVER
+	open_eyes
+}
+
+emotion() {
+    echo "set mou $1" | yarp rpc /icub/face/emotions/in
+    echo "set leb $1" | yarp rpc /icub/face/emotions/in
+    echo "set reb $1" | yarp rpc /icub/face/emotions/in
+}
+
+happy() {
+	emotion "hap"
+}
+
+neutral() {
+	emotion "neu"
+}
+
+sad() {
+	emotion "sad"
+}
+
+fix_point(){
+	echo "ctpq time $1 off 0 pos ($2 0.0 $3)"  | yarp rpc /ctpservice/head/rpc
+}
+
+# MY Functions ####################################### END
 
 #######################################################################################
 # SUB-SCENES FUNCTIONS
@@ -335,6 +375,43 @@ perform_22_30() {
     caress $ARM
 }
 
+# MY Performs ####################################### START
+
+perform_12_12() {
+	fix_point $1 $2 $3
+}
+
+perform_13_13() {
+	fix_point $1 $2 $3
+	sleep $1
+	arm_sleeve 4 40 left_arm
+	arm_sleeve 4 40 right_arm
+	sleep 10.0
+	
+	fix_point 5 -35 40
+}
+
+perform_15_16() {
+	gaze_with_neck "look $1 $2 $3"
+	gaze "set-delta 20 10 5" 
+    gaze_only_eyes "look-around 0.0 0.0 0.0"
+}
+
+perform_15_17() {
+	peek_a_boo $1
+}
+
+perform_20_24() {
+	fix_point $1 $2 $3
+}
+
+perform_20_25() {
+	fix_point $1 -25 0
+	sad
+}
+
+# MY Performs ####################################### END
+
 #######################################################################################
 # SCENES FUNCTIONS
 #######################################################################################
@@ -446,6 +523,36 @@ scene_22() {
     
     home_all
 }
+
+# MY Scenes ####################################### START
+scene_13() {
+    echo "Scena 13"
+    
+    THEAD=$1
+    PITCHHEAD=$2
+    YAWHEAD=$3
+    
+    perform_13_13 $THEAD $PITCHHEAD $YAWHEAD
+}
+
+scene_20() {
+	PITCH=$2
+	YAW=$3
+	THEAD=$1
+	let TSAD=$THEAD*2
+	
+	echo "clear pitch" | yarp rpc /iKinGazeCtrl/rpc
+    echo "clear yaw" | yarp rpc /iKinGazeCtrl/rpc
+    home_gaze
+
+    echo "Scena 20"
+    
+    perform_20_24 $THEAD $PITCH $YAW
+    sleep 5.0
+    
+    perform_20_25 $TSAD
+}
+# MY Scenes ####################################### END
 
 #######################################################################################
 # "MAIN" FUNCTION:                                                                    #
